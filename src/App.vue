@@ -4,12 +4,44 @@ import LessonCard from './components/LessonCard.vue'
 import SortControls from './components/SortControls.vue'
 import ShoppingCart from './components/ShoppingCart.vue'
 import CheckoutForm from './components/CheckoutForm.vue'
-import { getLessons, createOrder, updateLesson } from './services/api'
+import { getLessons, createOrder, updateLesson, searchLessons } from './services/api'
 import './catalogue.css'
 
 const lessons = ref([])
 const loading = ref(true)
 const error = ref('')
+const searchText = ref('')
+const searchResults = ref(null)
+const searching = ref(false)
+const searchError = ref('')
+let searchRequest = 0
+const visibleLessons = computed(() => searchResults.value === null ? lessons.value
+  : searchResults.value.map((result) => lessons.value.find((lesson) => lesson._id === result._id) || result))
+
+async function runSearch() {
+  const request = ++searchRequest
+  searching.value = true
+  searchError.value = ''
+  try {
+    const results = await searchLessons(searchText.value.trim())
+    if (request !== searchRequest) return
+    // Keep master lessons intact so search preserves cart availability.
+    for (const result of results) {
+      if (!lessons.value.some((lesson) => lesson._id === result._id)) lessons.value.push(result)
+    }
+    searchResults.value = results
+  } catch (problem) {
+    if (request === searchRequest) searchError.value = problem instanceof TypeError
+      ? 'Unable to connect to search. Please try again.' : problem.message
+  } finally {
+    if (request === searchRequest) searching.value = false
+  }
+}
+
+function clearSearch() {
+  searchText.value = ''
+  runSearch()
+}
 const sortAttribute = ref('topic')
 const sortDirection = ref('asc')
 const cart = ref([])
@@ -27,7 +59,7 @@ const cartItems = computed(() => cart.value.map((item) => ({
   quantity: item.quantity,
 })))
 const cartTotal = computed(() => cartItems.value.reduce((sum, item) => sum + item.lesson.price * item.quantity, 0))
-const sortedLessons = computed(() => [...lessons.value].sort((a, b) => {
+const sortedLessons = computed(() => [...visibleLessons.value].sort((a, b) => {
   const key = sortAttribute.value
   const result = ['price', 'space'].includes(key)
     ? a[key] - b[key]
@@ -161,15 +193,26 @@ onMounted(loadLessons)
     <section v-else aria-labelledby="catalogue-title" :aria-busy="loading">
       <div class="catalogue-heading">
         <h2 id="catalogue-title">Explore our lessons</h2>
-        <span v-if="!loading && !error">{{ lessons.length }} lessons to discover</span>
+        <span v-if="!loading && !error">{{ visibleLessons.length }} lessons to discover</span>
       </div>
       <SortControls v-model:attribute="sortAttribute" v-model:direction="sortDirection" />
+      <form class="search-form" role="search" v-on:submit.prevent="runSearch">
+        <label for="lesson-search">Find a lesson</label>
+        <div class="search-actions">
+          <input id="lesson-search" v-model="searchText" type="search" maxlength="100"
+            placeholder="Search subject, location, price or spaces" :disabled="loading || !!error" />
+          <button type="submit" :disabled="loading || !!error || searching">{{ searching ? 'Searching…' : 'Search' }}</button>
+          <button type="button" :disabled="loading || !!error || searching" v-on:click="clearSearch">Clear</button>
+        </div>
+      </form>
+      <p v-if="searching" role="status">Searching lessons…</p>
+      <p v-if="searchError" role="alert">{{ searchError }}</p>
       <p v-if="loading" class="status-panel" role="status">Loading lessons…</p>
       <div v-else-if="error" class="status-panel error-panel" role="alert">
         <p>{{ error }}</p>
         <button type="button" v-on:click="loadLessons">Try again</button>
       </div>
-      <p v-else-if="lessons.length === 0" class="status-panel">No lessons are available right now. Please check back soon.</p>
+      <p v-else-if="visibleLessons.length === 0" class="status-panel">No lessons found. Try another search or clear the search.</p>
       <div v-else class="lesson-grid">
         <LessonCard v-for="lesson in sortedLessons" :key="lesson._id" :lesson="lesson" v-on:add="addToCart" />
       </div>

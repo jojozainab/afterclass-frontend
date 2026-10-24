@@ -1,5 +1,13 @@
 # Lesson catalogue: Phase 5
 
+## Phase 8: server-side search
+
+Enter text and select Search or press Enter. Vue fetches `/search?q=...`; MongoDB searches all four attributes without requiring an attribute selection. Clear sends an empty search to restore all results. Sorting still applies to the returned results. Matching is done by the server, not by filtering the GET `/lessons` response in the browser.
+
+The master lesson list is retained for cart quantities and locally reduced availability; returned IDs select matching cards. Searching price/spaces uses persisted database values, before any unpurchased cart quantities. Request sequence numbers ignore superseded responses. Search failures display a message while retaining prior results.
+
+Manual checks (awaiting user verification): partial subject, mixed-case location, numeric price, numeric spaces, no matches, literal punctuation, empty search, sorting search results, clearing search and preserving cart quantities while searching. Stop the API to check the search error, restart and retry. Run `npm run build`.
+
 Start the back-end on port 3000, then run `npm run dev` in this repository. Open the printed URL, normally `http://localhost:5173`. If Vite uses a different port, adjust the back-end FRONTEND_ORIGIN to match and restart the back-end.
 
 `src/services/api.js` calls GET `/lessons` using fetch and Promises, checking the HTTP status and array response. `App.vue` stores lessons, loading and error states in Vue refs, loads lessons on mount and renders reusable LessonCard components using `v-for` with `_id` as the key. Each card displays the subject, location, GBP price, spaces and an API-hosted image. Failed images have a text fallback.
