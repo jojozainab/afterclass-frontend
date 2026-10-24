@@ -16,4 +16,21 @@ For a different API host, copy `.env.example` to `.env`, update VITE_API_BASE_UR
 - Restart the back-end and click Try again; confirm recovery.
 - Run `npm run build` to check the production bundle compiles.
 
-The user confirmed the requested catalogue checks and production build passed. Sorting, cart and checkout are scheduled for later phases. The old starter stylesheet is no longer imported; `src/catalogue.css` styles the catalogue.
+The user confirmed the Phase 5 catalogue checks and production build passed. The old starter stylesheet is no longer imported; `src/catalogue.css` styles the catalogue.
+
+## Phase 6: sorting and cart
+
+SortControls selects topic (labelled Subject), location, price or spaces in either direction. A computed property sorts a copy of the lesson array; numeric fields use subtraction and text fields use localeCompare.
+
+App owns the cart quantities and the displayed lesson availability. LessonCard emits an add event using v-on; App adds one space and decrements availability, guarding against zero. ShoppingCart lists each lesson with its quantity and emits remove events that restore one available space. Totals and the cart badge are computed. The navigation button is initially disabled and stays usable as Back to lessons if the final item is removed while viewing the cart.
+
+No bookings are saved during Phase 6. Reloading resets the cart and reloads Atlas availability. Checkout will be added in Phase 7.
+
+Manual checks (user confirmed all passed, including the production build):
+
+- Check all eight combinations of four sort attributes and two directions.
+- Add the same lesson until spaces reach zero; confirm the visible button becomes disabled and no additional spaces can be added.
+- Add multiple different lessons and inspect their quantities and totals in the cart.
+- Remove one space; check the restored availability and re-enabled Add button.
+- Remove all items; check the empty message, Back to lessons navigation and disabled empty cart access afterward.
+- Check sorting by spaces after additions/removals, narrow-screen layouts and `npm run build`.
