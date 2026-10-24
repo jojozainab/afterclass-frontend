@@ -30,7 +30,7 @@ For a different API host, copy `.env.example` to `.env`, update VITE_API_BASE_UR
 - Restart the back-end and click Try again; confirm recovery.
 - Run `npm run build` to check the production bundle compiles.
 
-The user confirmed the Phase 5 catalogue checks and production build passed. The old starter stylesheet is no longer imported; `src/catalogue.css` styles the catalogue.
+The user confirmed the Phase 5 catalogue checks and production build passed. `src/catalogue.css` styles the catalogue; the unused starter component and stylesheet have been removed.
 
 ## Phase 6: sorting and cart
 
