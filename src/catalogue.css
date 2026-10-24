@@ -1,0 +1,43 @@
+:root { font-family: 'Segoe UI', Arial, sans-serif; color: #213b35; background: #f8f8f2; font-synthesis: none; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; }
+* { box-sizing: border-box; }
+body { margin: 0; }
+button, input, select { font: inherit; }
+button { cursor: pointer; background: #245948; color: white; border: 0; border-radius: 8px; padding: 12px 20px; }
+button:hover { background: #173e32; }
+:focus-visible { outline: 3px solid #a65a24; outline-offset: 4px; }
+.site-header, main, footer { width: min(1180px, 100% - 48px); margin-inline: auto; }
+.site-header { min-height: 92px; display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid #dce3d9; }
+.brand { text-decoration: none; color: #213b35; font-size: 28px; font-weight: 800; letter-spacing: -1.5px; }
+.brand span { font-weight: 400; }
+.header-note { font-size: 13px; color: #54675e; }
+.intro { padding-block: 72px 64px; max-width: 720px; }
+.eyebrow { color: #526d52; font-size: 11px; font-weight: 700; letter-spacing: 2px; }
+h1 { font-size: clamp(40px, 6vw, 70px); line-height: 1.12; letter-spacing: -3px; margin: 22px 0; }
+h1 span { color: #5c7750; }
+.intro > p:last-child { max-width: 510px; color: #54675e; line-height: 1.8; font-size: 16px; }
+.catalogue-heading { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; margin-bottom: 24px; }
+h2 { font-size: 25px; letter-spacing: -0.8px; margin: 0; }
+.catalogue-heading > span { font-size: 13px; color: #54675e; }
+.lesson-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
+.lesson-card { background: white; border: 1px solid #dce3d9; border-radius: 16px; overflow: hidden; }
+.lesson-card img, .image-fallback { display: block; width: 100%; aspect-ratio: 5 / 3; height: auto; object-fit: cover; }
+.image-fallback { display: grid; place-items: center; background: #dce7d6; font-size: 25px; font-weight: 700; }
+.lesson-details { padding: 24px; }
+.location { margin: 0 0 8px; font-size: 12px; font-weight: 600; color: #63745e; }
+h3 { margin: 0 0 24px; font-size: 21px; letter-spacing: -0.6px; }
+dl { margin: 0; padding-top: 16px; border-top: 1px solid #edf0e9; display: flex; justify-content: space-between; gap: 12px; }
+dt { font-size: 11px; color: #63745e; margin-bottom: 5px; }
+dd { margin: 0; font-weight: 700; font-size: 17px; }
+.status-panel { padding: 40px 24px; border: 1px solid #dce3d9; border-radius: 12px; background: white; line-height: 1.6; }
+.error-panel { color: #8c3023; }
+.error-panel p { margin-top: 0; }
+footer { border-top: 1px solid #dce3d9; padding-block: 28px; margin-top: 64px; color: #63745e; font-size: 12px; }
+@media (max-width: 900px) { .lesson-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 560px) {
+  .site-header, main, footer { width: calc(100% - 32px); }
+  .header-note { display: none; }
+  .intro { padding-block: 40px; }
+  h1 { letter-spacing: -1.8px; }
+  .catalogue-heading { flex-direction: column; gap: 8px; }
+  .lesson-grid { grid-template-columns: 1fr; }
+}
