@@ -14,6 +14,12 @@ button:disabled, button:disabled:hover { background: #e1e5dc; color: #66705f; cu
 .cart-total strong { margin-left: 20px; }
 @media (max-width: 560px) { .site-header { flex-wrap: wrap; padding-block: 16px; } .cart-row { flex-direction: column; align-items: flex-start; gap: 12px; } }
 body { margin: 0; }
+.checkout-panel { display: grid; gap: 12px; max-width: 520px; padding: 28px; background: white; border: 1px solid #dce3d9; border-radius: 12px; margin-top: 32px; }
+.checkout-panel h3 { margin-bottom: 8px; }
+.checkout-panel input { width: 100%; padding: 12px; border: 1px solid #9da996; border-radius: 6px; }
+.checkout-panel small { color: #54675e; margin-bottom: 12px; }
+.checkout-panel [aria-invalid="true"] { border-color: #a53625; }
+.checkout-panel [role="alert"] { color: #8c3023; line-height: 1.6; overflow-wrap: anywhere; }
 button, input, select { font: inherit; }
 button { cursor: pointer; background: #245948; color: white; border: 0; border-radius: 8px; padding: 12px 20px; }
 button:hover { background: #173e32; }

@@ -3,7 +3,8 @@ import { computed, onMounted, ref } from 'vue'
 import LessonCard from './components/LessonCard.vue'
 import SortControls from './components/SortControls.vue'
 import ShoppingCart from './components/ShoppingCart.vue'
-import { getLessons } from './services/api'
+import CheckoutForm from './components/CheckoutForm.vue'
+import { getLessons, createOrder, updateLesson } from './services/api'
 import './catalogue.css'
 
 const lessons = ref([])
@@ -14,6 +15,12 @@ const sortDirection = ref('asc')
 const cart = ref([])
 const showCart = ref(false)
 const cartMessage = ref('')
+const checkoutBusy = ref(false)
+const checkoutMessage = ref('')
+const checkoutFailed = ref(false)
+const pendingOrder = ref(null)
+const uncertainOrder = ref(false)
+const cartLocked = computed(() => checkoutBusy.value || !!pendingOrder.value || uncertainOrder.value)
 const cartCount = computed(() => cart.value.reduce((sum, item) => sum + item.quantity, 0))
 const cartItems = computed(() => cart.value.map((item) => ({
   lesson: lessons.value.find((lesson) => lesson._id === item.lessonId),
@@ -29,6 +36,8 @@ const sortedLessons = computed(() => [...lessons.value].sort((a, b) => {
 }))
 
 function addToCart(lessonId) {
+  if (cartLocked.value) return
+  checkoutMessage.value = ''
   const lesson = lessons.value.find((item) => item._id === lessonId)
   if (!lesson || lesson.space <= 0) return
   const item = cart.value.find((item) => item.lessonId === lessonId)
@@ -39,6 +48,7 @@ function addToCart(lessonId) {
 }
 
 function removeFromCart(lessonId) {
+  if (cartLocked.value) return
   const index = cart.value.findIndex((item) => item.lessonId === lessonId)
   const lesson = lessons.value.find((item) => item._id === lessonId)
   if (index < 0 || !lesson) return
@@ -46,6 +56,70 @@ function removeFromCart(lessonId) {
   if (cart.value[index].quantity === 0) cart.value.splice(index, 1)
   lesson.space++
   cartMessage.value = `Removed one ${lesson.topic} space. ${cartCount.value} spaces in your cart.`
+}
+
+async function finishBooking() {
+  // Remove each successful PUT from the retry queue. No second POST is sent.
+  while (pendingOrder.value.updates.length) {
+    const update = pendingOrder.value.updates[0]
+    await updateLesson(update.lessonId, { space: update.space })
+    const lesson = lessons.value.find((item) => item._id === update.lessonId)
+    lesson.space = update.space
+    pendingOrder.value.updates.shift()
+  }
+  const orderId = pendingOrder.value.orderId
+  pendingOrder.value = null
+  cart.value = []
+  cartMessage.value = ''
+  checkoutFailed.value = false
+  checkoutMessage.value = `Your order has been submitted successfully. Reference: ${orderId}`
+}
+
+async function checkout(customer) {
+  if (cartLocked.value || cartCount.value === 0) return
+  if (!/^[A-Za-z]+$/.test(customer.name) || !/^[0-9]+$/.test(customer.phone)) return
+  checkoutBusy.value = true
+  checkoutFailed.value = false
+  checkoutMessage.value = ''
+  let posting = false
+  try {
+    const latest = await getLessons()
+    const updates = cart.value.map((item) => {
+      const lesson = latest.find((lesson) => lesson._id === item.lessonId)
+      if (!lesson || lesson.space < item.quantity) throw new Error('A selected lesson no longer has enough spaces. Please adjust your cart.')
+      return { lessonId: item.lessonId, space: lesson.space - item.quantity }
+    })
+    posting = true
+    const result = await createOrder({ ...customer, items: cart.value.map((item) => ({ ...item })) })
+    posting = false
+    pendingOrder.value = { orderId: result.orderId, updates }
+    await finishBooking()
+  } catch (problem) {
+    checkoutFailed.value = true
+    if (pendingOrder.value) {
+      checkoutMessage.value = `Order ${pendingOrder.value.orderId} was saved, but booking confirmation is incomplete. Please keep this page open and choose Complete booking.`
+    } else if (posting && (!problem.status || problem.status >= 500)) {
+      uncertainOrder.value = true
+      checkoutMessage.value = 'We could not confirm whether your order was saved. Please check before submitting again.'
+    } else {
+      checkoutMessage.value = problem instanceof TypeError ? 'Unable to connect. Please try again.' : problem.message
+    }
+  } finally {
+    checkoutBusy.value = false
+  }
+}
+
+async function retryBooking() {
+  if (checkoutBusy.value || !pendingOrder.value) return
+  checkoutBusy.value = true
+  try {
+    await finishBooking()
+  } catch {
+    checkoutFailed.value = true
+    checkoutMessage.value = 'Your order is saved, but confirmation is still incomplete. Keep this page open and try Complete booking again.'
+  } finally {
+    checkoutBusy.value = false
+  }
 }
 
 function loadLessons() {
@@ -66,9 +140,9 @@ onMounted(loadLessons)
 
 <template>
   <header class="site-header">
-    <a class="brand" href="./" aria-label="AfterClass home">After<span>Class</span>.</a>
+    <a class="brand" href="./" aria-label="AfterClass home" v-on:click.prevent="!cartLocked && (showCart = false)">After<span>Class</span>.</a>
     <span class="header-note">A little curiosity goes a long way.</span>
-    <button type="button" :disabled="!showCart && cartCount === 0" :aria-expanded="showCart"
+    <button type="button" :disabled="cartLocked || (!showCart && cartCount === 0)" :aria-expanded="showCart"
       v-on:click="showCart = !showCart">
       {{ showCart ? 'Back to lessons' : `Shopping cart (${cartCount})` }}
     </button>
@@ -80,7 +154,10 @@ onMounted(loadLessons)
       <p>From creative minds to future scientists, discover classes that make learning something to look forward to.</p>
     </section>
     <p class="cart-message" role="status">{{ cartMessage }}</p>
-    <ShoppingCart v-if="showCart" :items="cartItems" :total="cartTotal" v-on:remove="removeFromCart" />
+    <ShoppingCart v-if="showCart" :items="cartItems" :total="cartTotal" :locked="cartLocked" v-on:remove="removeFromCart">
+      <CheckoutForm :busy="checkoutBusy" :locked="cartLocked" :empty="cartCount === 0" :pending="!!pendingOrder"
+        :message="checkoutMessage" :failed="checkoutFailed" v-on:checkout="checkout" v-on:retry="retryBooking" />
+    </ShoppingCart>
     <section v-else aria-labelledby="catalogue-title" :aria-busy="loading">
       <div class="catalogue-heading">
         <h2 id="catalogue-title">Explore our lessons</h2>
