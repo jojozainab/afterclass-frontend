@@ -1,35 +1,59 @@
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import LessonCard from './components/LessonCard.vue'
 import SortControls from './components/SortControls.vue'
+import TeacherFilter from './components/TeacherFilter.vue'
 import ShoppingCart from './components/ShoppingCart.vue'
 import CheckoutForm from './components/CheckoutForm.vue'
-import { getLessons, createOrder, updateLesson, searchLessons } from './services/api'
+import { getLessons, createOrder, updateLesson, searchLessons, getTeachers } from './services/api'
 import './catalogue.css'
 
 const lessons = ref([])
 const loading = ref(true)
 const error = ref('')
+const teachers = ref([])
+const selectedTeacher = ref('')
+const teachersLoading = ref(true)
+const teachersError = ref('')
+
+function loadTeachers() {
+  teachersLoading.value = true
+  teachersError.value = ''
+  return getTeachers()
+    .then((data) => { teachers.value = data })
+    .catch(() => { teachersError.value = 'Unable to load teachers. Please try again.' })
+    .finally(() => { teachersLoading.value = false })
+}
 const searchText = ref('')
 const searchResults = ref(null)
+const appliedSearch = ref('')
 const searching = ref(false)
 const searchError = ref('')
 let searchRequest = 0
-const visibleLessons = computed(() => searchResults.value === null ? lessons.value
-  : searchResults.value.map((result) => lessons.value.find((lesson) => lesson._id === result._id) || result))
+const visibleLessons = computed(() => {
+  const results = searchResults.value === null ? lessons.value
+    : searchResults.value.map((result) => lessons.value.find((lesson) => lesson._id === result._id) || result)
+  return selectedTeacher.value ? results.filter((lesson) => lesson.teacherId === selectedTeacher.value) : results
+})
 
 async function runSearch() {
+  const query = searchText.value.trim()
+  if (!query) {
+    clearSearch()
+    return
+  }
   const request = ++searchRequest
   searching.value = true
   searchError.value = ''
   try {
-    const results = await searchLessons(searchText.value.trim())
+    const results = await searchLessons(query)
     if (request !== searchRequest) return
     // Keep master lessons intact so search preserves cart availability.
     for (const result of results) {
       if (!lessons.value.some((lesson) => lesson._id === result._id)) lessons.value.push(result)
     }
     searchResults.value = results
+    appliedSearch.value = query
   } catch (problem) {
     if (request === searchRequest) searchError.value = problem instanceof TypeError
       ? 'Unable to connect to search. Please try again.' : problem.message
@@ -39,9 +63,24 @@ async function runSearch() {
 }
 
 function clearSearch() {
+  // Invalidate pending responses so an old empty result cannot reapply itself.
+  searchRequest++
   searchText.value = ''
-  runSearch()
+  searchResults.value = null
+  appliedSearch.value = ''
+  searchError.value = ''
+  searching.value = false
 }
+
+function resetFilters() {
+  selectedTeacher.value = ''
+  clearSearch()
+}
+
+// Also handle deleting text or using the browser's native search clear icon.
+watch(searchText, (value) => {
+  if (!value.trim()) clearSearch()
+})
 const sortAttribute = ref('topic')
 const sortDirection = ref('asc')
 const cart = ref([])
@@ -168,6 +207,7 @@ function loadLessons() {
 }
 
 onMounted(loadLessons)
+onMounted(loadTeachers)
 </script>
 
 <template>
@@ -196,6 +236,8 @@ onMounted(loadLessons)
         <span v-if="!loading && !error">{{ visibleLessons.length }} lessons to discover</span>
       </div>
       <SortControls v-model:attribute="sortAttribute" v-model:direction="sortDirection" />
+      <TeacherFilter v-model="selectedTeacher" :teachers="teachers" :loading="teachersLoading"
+        :error="teachersError" v-on:retry="loadTeachers" />
       <form class="search-form" role="search" v-on:submit.prevent="runSearch">
         <label for="lesson-search">Find a lesson</label>
         <div class="search-actions">
@@ -205,6 +247,10 @@ onMounted(loadLessons)
           <button type="button" :disabled="loading || !!error || searching" v-on:click="clearSearch">Clear</button>
         </div>
       </form>
+      <div v-if="appliedSearch || selectedTeacher" class="active-filters">
+        <p v-if="appliedSearch">Search applied: “{{ appliedSearch }}”</p>
+        <button type="button" v-on:click="resetFilters">Reset filters</button>
+      </div>
       <p v-if="searching" role="status">Searching lessons…</p>
       <p v-if="searchError" role="alert">{{ searchError }}</p>
       <p v-if="loading" class="status-panel" role="status">Loading lessons…</p>
@@ -212,7 +258,7 @@ onMounted(loadLessons)
         <p>{{ error }}</p>
         <button type="button" v-on:click="loadLessons">Try again</button>
       </div>
-      <p v-else-if="visibleLessons.length === 0" class="status-panel">No lessons found. Try another search or clear the search.</p>
+      <p v-else-if="!searching && visibleLessons.length === 0" class="status-panel">No lessons match your search and teacher selection. Choose Reset filters to see all lessons.</p>
       <div v-else class="lesson-grid">
         <LessonCard v-for="lesson in sortedLessons" :key="lesson._id" :lesson="lesson" v-on:add="addToCart" />
       </div>

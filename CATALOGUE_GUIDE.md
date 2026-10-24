@@ -1,8 +1,14 @@
 # Lesson catalogue: Phase 5
 
+## Phase 9: teachers
+
+TeacherFilter loads names through GET `/teachers` and filters the displayed lessons by their teacherId. The API also supports GET `/lessons?teacherId=...` for independent Postman verification. Search remains server-side; teacher selection narrows the returned results in Vue. All teachers removes only the teacher filter, while Clear removes only the text search. Cart state is independent of these filters.
+
+Manual checks (awaiting user verification): with an empty search, all five teachers should have two lessons each. Sarah Ahmed teaches Mathematics and Science; James Wilson teaches English and Creative Writing; Amina Bello teaches Art and Music; Daniel Chen teaches Coding and Robotics; Grace Taylor teaches Football and Drama. Check All teachers returns 10 lessons, combining search and teacher choice gives their intersection, sorting works and cart quantities survive filter changes. Test phone-width layout and `npm run build`.
+
 ## Phase 8: server-side search
 
-Enter text and select Search or press Enter. Vue fetches `/search?q=...`; MongoDB searches all four attributes without requiring an attribute selection. Clear sends an empty search to restore all results. Sorting still applies to the returned results. Matching is done by the server, not by filtering the GET `/lessons` response in the browser.
+Enter text and select Search or press Enter. Vue fetches `/search?q=...`; MongoDB searches all four attributes without requiring an attribute selection. Clear or deleting all search text immediately removes the text filter without another API request. Pending responses are invalidated so they cannot restore stale results. Reset filters removes both text search and teacher selection. Sorting still applies to returned results. Matching is done by the server, not by filtering GET `/lessons` results in the browser.
 
 The master lesson list is retained for cart quantities and locally reduced availability; returned IDs select matching cards. Searching price/spaces uses persisted database values, before any unpurchased cart quantities. Request sequence numbers ignore superseded responses. Search failures display a message while retaining prior results.
 

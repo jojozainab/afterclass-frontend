@@ -1,5 +1,14 @@
 export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000').replace(/\/+$/, '')
 
+export function getTeachers() {
+  return fetch(`${API_BASE_URL}/teachers`).then(async (response) => {
+    const teachers = await response.json()
+    if (!response.ok) throw new Error(teachers.error || 'Unable to load teachers.')
+    if (!Array.isArray(teachers)) throw new Error('Unexpected teacher response from the server.')
+    return teachers
+  })
+}
+
 function sendJson(path, method, body) {
   return fetch(`${API_BASE_URL}${path}`, {
     method,

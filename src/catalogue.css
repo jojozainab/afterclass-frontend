@@ -14,6 +14,9 @@ button:disabled, button:disabled:hover { background: #e1e5dc; color: #66705f; cu
 .cart-total strong { margin-left: 20px; }
 @media (max-width: 560px) { .site-header { flex-wrap: wrap; padding-block: 16px; } .cart-row { flex-direction: column; align-items: flex-start; gap: 12px; } }
 body { margin: 0; }
+.teacher-filter { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-bottom: 24px; }
+.teacher-filter label { font-size: 14px; font-weight: 600; }
+.teacher-filter select { padding: 10px 14px; border: 1px solid #9da996; border-radius: 8px; background: white; max-width: 100%; }
 .search-form { margin-bottom: 24px; }
 .search-form label { display: block; font-weight: 600; margin-bottom: 10px; }
 .search-actions { display: flex; gap: 10px; flex-wrap: wrap; }
