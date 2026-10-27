@@ -21,23 +21,23 @@ Search requests are processed by the back-end. Teacher selection narrows the dis
 
 ## Local development
 
-| Command | Purpose |
-| --- | --- |
-| `npm ci` | Installs the locked dependencies |
-| `npm run dev` | Starts the Vite development server |
-| `npm run build` | Builds the production bundle |
-| `npm run preview` | Previews the built bundle locally |
+| Command           | Purpose                            |
+| ----------------- | ---------------------------------- |
+| `npm ci`          | Installs the locked dependencies   |
+| `npm run dev`     | Starts the Vite development server |
+| `npm run build`   | Builds the production bundle       |
+| `npm run preview` | Previews the built bundle locally  |
 
 The application path is `/afterclass-frontend/`. Local API requests default to `http://localhost:3000`; `VITE_API_BASE_URL` provides an optional override. This variable is public browser configuration and contains no database credentials.
 
 ## Deployment and testing
 
-The GitHub Actions workflow builds and deploys the application to GitHub Pages on pushes to main. Its build uses the Render API address. `DEPLOYMENT.md` records the hosting configuration, and `CATALOGUE_GUIDE.md` explains the features and manual test scenarios.
+The GitHub Actions workflow builds and deploys the application to GitHub Pages on pushes to main. Its build uses the Render API address.
 
 I tested the catalogue, all sorting combinations, cart behaviour, checkout, persistence, search, teacher filtering, responsive layouts and production builds. I also tested the deployed application against the Render API and Atlas database.
 
 ## Acknowledgement and limitations
 
-I used ChatGPT/Codex for code generation, explanations, debugging and documentation. The final handbook-format declaration is part of the remaining submission preparation.
+I used ChatGPT for code generation in some sections, explanations, debugging and documentation. The final handbook-format declaration is part of the remaining submission preparation.
 
 Cart contents and pending recovery are in memory. Order creation and availability updates use separate requests and do not provide atomic concurrent reservations.
